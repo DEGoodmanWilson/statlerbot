@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include <slack/slack.h>
 #include <luna/luna.h>
 #include "token_storage.h"
 #include "route_set.h"
-#include "message_router.h"
+#include <slack/message_router.h>
 
 using namespace luna;
 
@@ -23,5 +22,6 @@ public:
     void handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope);
 private:
     slack::http_event_client handler_;
-    message_router router_;
+    slack::message_router router_;
+    token_storage *store_;
 };

@@ -54,7 +54,7 @@ oauth::oauth(luna::server *server, token_storage *store, const std::string &scop
             }
 
             // At this point we have a team id and an access token, let's store it.
-            store->set_token(*result.team_id, *result.access_token);
+            store->set_token(result.team_id, {result.access_token, result.bot->bot_access_token, result.user_id, result.bot->bot_user_id});
 
             return {"<h1>Success!</h1>"};
         }));

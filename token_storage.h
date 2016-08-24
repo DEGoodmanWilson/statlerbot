@@ -4,18 +4,30 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-
-// for now, let's just store this in memory; we can adapt this to a persistence layer later
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <slack/types.h>
 
 class token_storage
 {
 public:
-    void set_token(const std::string &team_id, const std::string &token);
+
+    struct token_info
+    {
+        slack::token access_token;
+        slack::token bot_token;
+        slack::user_id user_id;
+        slack::user_id bot_id;
+    };
+
+    token_storage(const std::string &mongo_url) : conn{mongocxx::uri{mongo_url}} {}
+
+    void set_token(const std::string &team_id, const token_info &token);
 
     //not super fond of this in/out second parameter.
-    bool get_token_for_team(const std::string &team_id, std::string &token);
+    bool get_token_for_team(const std::string &team_id, token_info &token);
 private:
-    std::map<std::string, std::string> storage_;
+    mongocxx::client conn;
 };
