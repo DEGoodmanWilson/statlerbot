@@ -1,4 +1,7 @@
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <luna/luna.h>
 #include "token_storage.h"
 #include "oauth.h"
@@ -63,7 +66,15 @@ int main()
     event_receiver receiver{&server, &store, verification_token};
 
     //We should do something more interesting with this thread, than just idle.
-    while (1);
+//    while (1);
+
+    //IDLE UNTIL DEAD basically just stop this thread in its tracks
+    std::mutex m;
+    std::condition_variable cv;
+    {
+        std::unique_lock<std::mutex> lk(m);
+        cv.wait(lk, []{return false;});
+    }
 
     return 0;
 }
