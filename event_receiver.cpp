@@ -80,7 +80,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         store_{store}
 {
 
-    server->handle_request(request_method::POST, "/events", [&](auto req) -> response
+    server->handle_request(request_method::POST, "/event", [&](auto req) -> response
         {
             return {handler_.handle_event(req.body)};
         });
