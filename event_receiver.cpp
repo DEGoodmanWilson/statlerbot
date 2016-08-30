@@ -5,6 +5,8 @@
 #include "event_receiver.h"
 #include <slack/slack.h>
 #include <random>
+#include <easylogging++.h>
+
 
 template<typename Iter, typename RandomGenerator>
 Iter select_randomly(Iter start, Iter end, RandomGenerator &g)
@@ -33,24 +35,27 @@ uint8_t d100()
 
 void event_receiver::handle_error(std::string message, std::string received)
 {
-    std::cout << message << " " << received << std::endl;
+    // we don't have to log, because it will be logged for us.
+//    LOG(ERROR) << message << " " << received;
+//    std::cout << message << " " << received << std::endl;
 }
 
 void
 event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, const slack::http_event_envelope &envelope)
 {
-    std::cout << event->type << std::endl;
+    LOG(WARNING) << "Unknown event: " << event->type;
 }
 
 void
 event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
 {
+    LOG(DEBUG) << "Handling message: " << event->text;
+
     static std::vector<std::string> phrases = {
             "I wonder if there really is life on another planet.",
             "Boo!",
     };
 
-    std::cout << event->type << ": " << event->text << std::endl;
 
 //TODO this can be highly optimized
     token_storage::token_info token;
@@ -82,7 +87,11 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
 
     server->handle_request(request_method::POST, "/event", [&](auto req) -> response
         {
-            return {handler_.handle_event(req.body)};
+            if(!req.body.empty())
+                return {handler_.handle_event(req.body)};
+            else if(!req.params["event"].empty())
+                return {handler_.handle_event(req.params["event"])};
+            return {404};
         });
 
 
@@ -106,6 +115,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
             message.reply("Nope, they’re _all_ bad!");
         });
 
+
     handler_.hears("What’s all the commotion about?", [](const auto &message)
         {
             message.reply("Waldorf, the bunny ran away!");
@@ -114,6 +124,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         {
             message.reply("Smarter than us!");
         });
+
 
     handler_.hears("Boooo!", [](const auto &message)
         {
