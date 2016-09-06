@@ -1,5 +1,5 @@
 [requires]
-luna/2.2@DEGoodmanWilson/stable
+luna/2.2.1@DEGoodmanWilson/stable
 engine/1.0-beta16@DEGoodmanWilson/testing
 jsoncpp/1.7.3@theirix/stable
 easyloggingpp/9.80@memsharded/testing
