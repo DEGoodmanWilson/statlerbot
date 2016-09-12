@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
 #include <slack/types.h>
+#include <map>
 
 class token_storage
 {
@@ -22,12 +19,10 @@ public:
         slack::user_id bot_id;
     };
 
-    token_storage(const std::string &mongo_url) : conn{mongocxx::uri{mongo_url}} {}
-
     void set_token(const std::string &team_id, const token_info &token);
 
     //not super fond of this in/out second parameter.
     bool get_token_for_team(const std::string &team_id, token_info &token);
 private:
-    mongocxx::client conn;
+    std::map<std::string, token_info> _store; //TODO this is dumb, because it is unboundedly large. For now.
 };
