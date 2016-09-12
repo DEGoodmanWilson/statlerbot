@@ -87,15 +87,15 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
 
     server->handle_request(request_method::POST, "/proxy/[\\d\\w]+/slack/event", [&](auto req) -> response
         {
-            if(req.headers.count("bb-slackaccesstoken"))
+            if(req.headers.count("Bb-Slackaccesstoken"))
             {
                 token_storage::token_info token{
-                        req.headers["bb-slackaccesstoken"],
-                        req.headers["bb-slackbotaccesstoken"],
-                        req.headers["bb-slackuserid"],
-                        req.headers["bb-slackbotuserid"],
+                        req.headers["Bb-Slackaccesstoken"],
+                        req.headers["Bb-Slackbotaccesstoken"],
+                        req.headers["Bb-Slackuserid"],
+                        req.headers["Bb-Slackbotuserid"],
                 };
-                store_->set_token(req.headers["bb-slackteamid"], token);
+                store_->set_token(req.headers["Bb-Slackteamid"], token);
             }
 
             if(!req.body.empty())
