@@ -87,6 +87,17 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
 
     server->handle_request(request_method::POST, "/event", [&](auto req) -> response
         {
+            if(req.headers.count("bb-slackaccesstoken"))
+            {
+                token_storage::token_info token{
+                        req.headers["bb-slackaccesstoken"],
+                        req.headers["bb-slackbotaccesstoken"],
+                        req.headers["bb-slackuserid"],
+                        req.headers["bb-slackbotuserid"],
+                };
+                store_->set_token(req.headers["bb-slackteamid"], token);
+            }
+
             if(!req.body.empty())
                 return {handler_.handle_event(req.body)};
             else if(!req.params["event"].empty())
