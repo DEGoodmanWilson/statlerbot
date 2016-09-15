@@ -73,37 +73,41 @@ event_receiver::handle_message(std::shared_ptr<slack::event::message> event, con
 event_receiver::event_receiver(server *server, token_storage *store, const std::string &verification_token) :
         route_set{server},
         handler_{[=](const slack::team_id team_id) -> std::string
+                 {
+                     token_storage::token_info token;
+                     if (store->get_token_for_team(team_id, token))
                      {
-                         token_storage::token_info token;
-                         if (store->get_token_for_team(team_id, token))
-                         {
-                             return token.bot_token;
-                         }
-                         return "";
-                     },
+                         return token.bot_token;
+                     }
+                     return "";
+                 },
                  verification_token},
         store_{store}
 {
 
     server->handle_request(request_method::POST, "/proxy/[\\d\\w]+/slack/event", [&](auto req) -> response
+    {
+        if (req.headers.count("Bb-Slackaccesstoken"))
         {
-            if(req.headers.count("Bb-Slackaccesstoken"))
-            {
-                token_storage::token_info token{
-                        req.headers["Bb-Slackaccesstoken"],
-                        req.headers["Bb-Slackbotaccesstoken"],
-                        req.headers["Bb-Slackuserid"],
-                        req.headers["Bb-Slackbotuserid"],
-                };
-                store_->set_token(req.headers["Bb-Slackteamid"], token);
-            }
+            token_storage::token_info token{
+                    req.headers["Bb-Slackaccesstoken"],
+                    req.headers["Bb-Slackbotaccesstoken"],
+                    req.headers["Bb-Slackuserid"],
+                    req.headers["Bb-Slackbotuserid"],
+            };
+            store_->set_token(req.headers["Bb-Slackteamid"], token);
+        }
 
-            if(!req.body.empty())
-                return {handler_.handle_event(req.body)};
-            else if(!req.params["event"].empty())
-                return {handler_.handle_event(req.params["event"])};
-            return {404};
-        });
+        if (!req.body.empty())
+        {
+            return {handler_.handle_event(req.body)};
+        }
+        else if (!req.params["event"].empty())
+        {
+            return {handler_.handle_event(req.params["event"])};
+        }
+        return {404};
+    });
 
 
     //event handlers
@@ -122,47 +126,52 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
 
     //dialog responses
     handler_.hears("They aren’t half bad.", [](const auto &message)
-        {
-            message.reply("Nope, they’re _all_ bad!");
-        });
+    {
+        message.reply("Nope, they’re _all_ bad!");
+    });
 
 
     handler_.hears("What’s all the commotion about?", [](const auto &message)
-        {
-            message.reply("Waldorf, the bunny ran away!");
-        });
+    {
+        message.reply("Waldorf, the bunny ran away!");
+    });
     handler_.hears("Well, you know what that makes him ---", [](const auto &message)
-        {
-            message.reply("Smarter than us!");
-        });
+    {
+        message.reply("Smarter than us!");
+    });
 
 
     handler_.hears("Boooo!", [](const auto &message)
-        {
-            message.reply("That was the worst thing I’ve ever heard!");
-        });
+    {
+        message.reply("That was the worst thing I’ve ever heard!");
+    });
     handler_.hears("It was terrible!", [](const auto &message)
-        {
-            message.reply("Horrendous!");
-        });
+    {
+        message.reply("Horrendous!");
+    });
     handler_.hears("Well it wasn’t that bad.", [](const auto &message)
-        {
-            message.reply("Oh, yeah?");
-        });
+    {
+        message.reply("Oh, yeah?");
+    });
     handler_.hears("Well, there were parts of it I liked!", [](const auto &message)
-        {
-            message.reply("Well, I liked alot of it.");
-        });
+    {
+        message.reply("Well, I liked alot of it.");
+    });
     handler_.hears("Yeah, it was _good_ actually.", [](const auto &message)
-        {
-            message.reply("It was great!");
-        });
+    {
+        message.reply("It was great!");
+    });
     handler_.hears("It was wonderful!", [](const auto &message)
-        {
-            message.reply("Yeah, bravo!");
-        });
+    {
+        message.reply("Yeah, bravo!");
+    });
     handler_.hears("More!", [](const auto &message)
-        {
-            message.reply("More!");
-        });
+    {
+        message.reply("More!");
+    });
+
+    handler_.hears("You know, that's pretty catchy.", [](const auto &message)
+    {
+        message.reply("So is smallpox.");
+    });
 }
