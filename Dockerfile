@@ -24,4 +24,4 @@ RUN conan install -s compiler=gcc -s compiler.version=5.4 -s compiler.libcxx=lib
 WORKDIR /home/conan/app/build
 RUN cmake ..
 RUN cmake --build .
-CMD ["/home/conan/app/build/bin/statlerbot -v"]
+CMD ["/home/conan/app/build/bin/statlerbot", "-v"]
