@@ -85,7 +85,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         store_{store}
 {
 
-    server->handle_request(request_method::POST, "/proxy/[\\d\\w]+/slack/event", [&](auto req) -> response
+    server->handle_request(request_method::POST, "/slack/event", [&](auto req) -> response
     {
         if (req.headers.count("Bb-Slackaccesstoken"))
         {
