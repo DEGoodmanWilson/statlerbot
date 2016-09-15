@@ -5,8 +5,7 @@
 #include "event_receiver.h"
 #include <slack/slack.h>
 #include <random>
-//#include <easylogging++.h>
-
+#include "logging.h"
 
 template<typename Iter, typename RandomGenerator>
 Iter select_randomly(Iter start, Iter end, RandomGenerator &g)
@@ -36,20 +35,20 @@ uint8_t d100()
 void event_receiver::handle_error(std::string message, std::string received)
 {
     // we don't have to log, because it will be logged for us.
-//    std::cout << "ERROR: " << message << " " << received << std::endl;
+//    LOG(ERROR) << message << " " << received;
 //    std::cout << message << " " << received << std::endl;
 }
 
 void
 event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, const slack::http_event_envelope &envelope)
 {
-    std::cout << "WARNING: " << "Unknown event: " << event->type << std::endl;
+    LOG(WARNING) << "Unknown event: " << event->type;
 }
 
 void
 event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
 {
-    std::cout << "DEBUG: " << "Handling message: " << event->text << std::endl;
+    LOG(DEBUG) << "Handling message: " << event->text;
 
     static std::vector<std::string> phrases = {
             "I wonder if there really is life on another planet.",

@@ -3,33 +3,30 @@
 #include <condition_variable>
 #include <luna/luna.h>
 #include <slack/slack.h>
-//#include <easylogging++.h>
+#include "logging.h"
 #include "token_storage.h"
 #include "event_receiver.h"
 
-//#define ELPP_LOGGING_FLAGS_FROM_ARG
-//#define ELPP_THREAD_SAFE
-//#define ELPP_FORCE_USE_STD_THREAD
-//INITIALIZE_EASYLOGGINGPP
+INITIALIZE_EASYLOGGINGPP
 
 void luna_logger(luna::log_level level, const std::string &message)
 {
     switch(level)
     {
         case luna::log_level::DEBUG:
-            std::cout << "DEBUG: " << message << std::endl;
+            LOG(DEBUG) << message;
             break;
         case luna::log_level::INFO:
-            std::cout << "INFO: " << message << std::endl;
+            LOG(INFO) << message;
             break;
         case luna::log_level::WARNING:
-            std::cout << "WARNING: " << message << std::endl;
+            LOG(WARNING) << message;
             break;
         case luna::log_level::ERROR:
-            std::cout << "ERROR: " << message << std::endl;
+            LOG(ERROR) << message;
             break;
         case luna::log_level::FATAL:
-            std::cout << "FATAL: " << message << std::endl;
+            LOG(FATAL) << message;
             break;
     }
 }
@@ -39,29 +36,26 @@ void slack_logger(slack::log_level level, const std::string &message)
     switch(level)
     {
         case slack::log_level::DEBUG:
-            std::cout << "DEBUG: " << message << std::endl;
+            LOG(DEBUG) << message;
             break;
         case slack::log_level::INFO:
-            std::cout << "INFO: " << message << std::endl;
+            LOG(INFO) << message;
             break;
         case slack::log_level::WARNING:
-            std::cout << "WARNING: " << message << std::endl;
+            LOG(WARNING) << message;
             break;
         case slack::log_level::ERROR:
-            std::cout << "ERROR: " << message << std::endl;
+            LOG(ERROR) << message;
             break;
         case slack::log_level::FATAL:
-            std::cout << "FATAL: " << message << std::endl;
+            LOG(FATAL) << message;
             break;
     }
 }
 
 int main(int argc, char* argv[])
 {
-//    el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
-
-
-//    START_EASYLOGGINGPP(argc, argv);
+    START_EASYLOGGINGPP(argc, argv);
 
 //    el::Configurations defaultConf;
 //    defaultConf.setToDefault();
@@ -91,7 +85,7 @@ int main(int argc, char* argv[])
 
     if (!server)
     {
-        std::cout << "FATAL: " << "Failed to stand up webserver!" << std::endl;
+        LOG(FATAL) << "Failed to stand up webserver!";
         return -1;
     }
 
@@ -99,7 +93,7 @@ int main(int argc, char* argv[])
 
     slack::set_logger(slack_logger);
 
-    std::cout << "INFO: " << "Server started on port " << std::to_string(server.get_port()) << std::endl;
+    LOG(INFO) << "Server started on port " << std::to_string(server.get_port());
 
     event_receiver receiver{&server, &store, ""}; //use empty string because beep boop is doing the checking for us.
 
