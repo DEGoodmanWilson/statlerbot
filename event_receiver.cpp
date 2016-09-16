@@ -147,7 +147,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
     {
         message.reply("Waldorf, the bunny ran away!");
     });
-    handler_.hears("Well, you know what that makes him ---", [](const auto &message)
+    handler_.hears("Well, you know what that makes him…", [](const auto &message)
     {
         message.reply("Smarter than us!");
     });
