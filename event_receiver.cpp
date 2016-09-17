@@ -143,7 +143,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
     });
 
 
-    handler_.hears(std::regex{"^What’s all the commotion about?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^What’s all the commotion about\?$"}, [](const auto &message)
     {
         message.reply("Waldorf, the bunny ran away!");
     });
@@ -192,22 +192,22 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("No, not so loud: they may hear you!");
     });
 
-    handler_.hears(std::regex{"^Yeah, whadya think?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^Yeah, whadya think\?$"}, [](const auto &message)
     {
         message.reply("Beats sitting home watching television.");
     });
 
-    handler_.hears(std::regex{"^What did you like about it?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^What did you like about it\?$"}, [](const auto &message)
     {
         message.reply("It was the _last_ message!");
     });
 
-    handler_.hears(std::regex{"^Have we ever said that this channel is for the birds?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^Have we ever said that this channel is for the birds\?$"}, [](const auto &message)
     {
         message.reply("Yes, and we'll keep saying it until it gets a laugh.");
     });
 
-    handler_.hears(std::regex{"^Do you think there's life in outer space?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^Do you think there's life in outer space\?$"}, [](const auto &message)
     {
         message.reply("There's certainly none in this channel.");
     });
@@ -217,7 +217,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("Why is that?");
     });
 
-    handler_.hears(std::regex{"^Why?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^Why\?$"}, [](const auto &message)
     {
         message.reply("I'm going to find out if you can sue a team for breach of taste!");
     });
@@ -232,7 +232,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("Less! Less!");
     });
 
-    handler_.hears(std::regex{"^Yeah? What's that got to do with what we just read?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^Yeah\? What's that got to do with what we just read\?$"}, [](const auto &message)
     {
         message.reply("Nothing, just thought I'd mention it.");
     });
@@ -242,7 +242,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("You plan to like this channel?");
     });
 
-    handler_.hears(std::regex{"^:tv: What's the name of this movie?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^:tv: What's the name of this movie\?$"}, [](const auto &message)
     {
         message.reply("\"Beach Blanket Frankenstein\".");
     });
@@ -259,16 +259,16 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("Wonderful.");
     });
 
-    handler_.hears(std::regex{"^How do they do it?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^How do they do it\?$"}, [](const auto &message)
     {
         message.reply("How do _we read_ it?");
     });
-    handler_.hears(std::regex{"^_Why_ do we read it?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^_Why_ do we read it\?$"}, [](const auto &message)
     {
         message.reply("Why do _the rest of you_ read it?");
     });
 
-    handler_.hears(std::regex{"^What, you mean you actually like this channel now?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^What, you mean you actually like this channel now\?$"}, [](const auto &message)
     {
         message.reply("No, they've made the channel even worse!");
     });
@@ -301,7 +301,7 @@ event_receiver::event_receiver(server *server, token_storage *store, const std::
         message.reply("Why indigestion?");
     });
 
-    handler_.hears(std::regex{"^What's the point?$"}, [](const auto &message)
+    handler_.hears(std::regex{"^What's the point\?$"}, [](const auto &message)
     {
         message.reply("You're right. Forget it.");
     });
