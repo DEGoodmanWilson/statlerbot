@@ -9,6 +9,6 @@ CONAN_BASIC_SETUP()
 include_directories(SYSTEM
 )
 
-set(SOURCE_FILES main.cpp token_storage.cpp token_storage.h event_receiver.cpp event_receiver.h route_set.cpp route_set.h logging.h)
+set(SOURCE_FILES main.cpp event_receiver.cpp event_receiver.h route_set.cpp route_set.h logging.h)
 add_executable(statlerbot ${SOURCE_FILES})
 target_link_libraries(statlerbot ${CONAN_LIBS})

@@ -4,7 +4,6 @@
 #include <luna/luna.h>
 #include <slack/slack.h>
 #include "logging.h"
-#include "token_storage.h"
 #include "event_receiver.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -75,11 +74,7 @@ int main(int argc, char* argv[])
     }
 
 
-
-    // Now, let's stand up a storage layer
-    token_storage store;
-
-    // Next, let's stand up a webserver
+    // Now, let's stand up a webserver
     // Let's not worry about TLS for now, as we'll stand up behind ngrok for now
     luna::server server{luna::server::port{port}};
 
@@ -95,7 +90,7 @@ int main(int argc, char* argv[])
 
     LOG(INFO) << "Server started on port " << std::to_string(server.get_port());
 
-    event_receiver receiver{&server, &store, ""}; //use empty string because beep boop is doing the checking for us.
+    event_receiver receiver{&server, ""}; //use empty string because beep boop is doing the checking for us.
 
     //IDLE UNTIL DEAD basically just stop this thread in its tracks
     std::mutex m;
