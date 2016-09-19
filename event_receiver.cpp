@@ -211,7 +211,7 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
     {
         if(is_from_us_(message)) return;
 
-        message.reply("Well, I liked alot of it.");
+        message.reply("Well, I liked a lot of it.");
     });
     handler_.hears(std::regex{"^Yeah, it was _good_ actually.$"}, [](const auto &message)
     {
