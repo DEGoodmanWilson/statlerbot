@@ -122,34 +122,43 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
     }
 }
 
+//TODO
+// void event_receiver::handle_leave_channel()
+
 void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event, const slack::http_event_envelope &envelope)
 {
     //someone just joined a channel, is it us?
     if(event->user != envelope.token.bot_id) return; //it wasn't us
+    //TODO was it Waldorf?
 
     //see if waldorf is in this channel
     //TODO do this in the background
     slack::slack c{envelope.token.bot_token};
 
     bool is_companion_installed = false;
+    slack::user_id companion_bot_id;
     auto user_list = c.users.list().members;
     for (const auto &user : user_list)
     {
         if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
         {
             is_companion_installed = true;
+            companion_bot_id = user.id;
             break;
         }
     }
 
     bool is_companion_in_channel = false;
-    auto channel_members = c.channels.info(event->channel).channel.members;
-    for (const auto &user : channel_members)
+    if(is_companion_installed)
     {
-        if (user == WALDORF_APP_ID)
+        auto channel_members = c.channels.info(event->channel).channel.members;
+        for (const auto &user : channel_members)
         {
-            is_companion_in_channel = true;
-            break;
+            if (user == companion_bot_id)
+            {
+                is_companion_in_channel = true;
+                break;
+            }
         }
     }
 
@@ -603,8 +612,10 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
     });
 
 
-
-
+    handler_.hears(std::regex{"^Well, Statlerbot, it's time to go. Thank goodness!$"}, [](const auto &message)
+    {
+        message.reply("Wait, don't leave me here all by myself!");
+    });
 
     //// Strangely, this is how we find out if we've been kicked. Fragile, I'm guessing. TOTAL HACK ALERT!
     handler_.hears(std::regex{"^You have been removed from #"}, [](const auto &message)
@@ -620,7 +631,7 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
             //post into that channel
             slack::slack c{message.token.bot_token};
             auto channel_name = pieces_match[1].str();
-            c.chat.postMessage(channel_name, "Well, Waldorf, it's time to go. Thank goodness!");
+            c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!");
         }
     });
 }
