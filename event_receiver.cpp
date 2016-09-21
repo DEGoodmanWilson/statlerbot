@@ -34,6 +34,36 @@ uint8_t d100_()
     return i;
 }
 
+bool is_companion_installed_(const slack::slack &client, slack::user_id &user_id)
+{
+    auto user_list = client.users.list().members;
+    for (const auto &user : user_list)
+    {
+        if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
+        {
+            user_id = user.id;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_user_in_channel_(const slack::slack &client, const slack::user_id &user_id, const slack::channel_id &channel_id)
+{
+    auto channel_members = client.channels.info(channel_id).channel.members;
+    for (const auto &user : channel_members)
+    {
+        if (user == user_id)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 bool is_from_us_(slack::http_event_client::message message)
 {
     return ((message.from_user_id == message.token.bot_id) || (message.from_user_id == message.token.bot_user_id) );
@@ -55,22 +85,11 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
     if (event->type == "bb.team_added")
     {
         //we've just been added to the team. Message the app installer.
-        //TODO do this in the background
         slack::slack c{envelope.token.bot_token};
-
-        bool is_companion_installed = false;
-        auto user_list = c.users.list().members;
-        for (const auto &user : user_list)
-        {
-            if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
-            {
-                is_companion_installed = true;
-                break;
-            }
-        }
+        slack::user_id companion_user_id;
 
         c.chat.postMessage(envelope.token.user_id, "Thanks for installing me!");
-        if (is_companion_installed)
+        if (is_companion_installed_(c, companion_user_id))
         {
             c.chat.postMessage(envelope.token.user_id,
                                "Just invite Waldorfbot and me into any channel, and we'll get to heckling.");
@@ -89,51 +108,29 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
 void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event, const slack::http_event_envelope &envelope)
 {
     //someone just joined a channel, is it us?
-    if(event->user != envelope.token.bot_user_id) return; //it wasn't us
-    //TODO was it Waldorf?
+    if (event->user != envelope.token.bot_user_id) return; //it wasn't us
 
     //see if waldorf is in this channel
     //TODO do this in the background
     slack::slack c{envelope.token.bot_token};
 
-    bool is_companion_installed = false;
     slack::user_id companion_bot_user_id;
-    auto user_list = c.users.list().members;
-    for (const auto &user : user_list)
+    if(is_companion_installed_(c, companion_bot_user_id))
     {
-        if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
+        if(is_user_in_channel_(c, companion_bot_user_id, event->channel))
         {
-            is_companion_installed = true;
-            companion_bot_user_id = user.id;
-            break;
+            c.chat.postMessage(event->channel, "Waldorfbot! There you are, old chum.");
         }
-    }
-
-    bool is_companion_in_channel = false;
-    if(is_companion_installed)
-    {
-        auto channel_members = c.channels.info(event->channel).channel.members;
-        for (const auto &user : channel_members)
+        else
         {
-            if (user == companion_bot_user_id)
-            {
-                is_companion_in_channel = true;
-                break;
-            }
+            c.chat.postMessage(event->channel,
+                               "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?");
         }
-    }
-
-    if(!is_companion_installed)
-    {
-        c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?");
-    }
-    else if(!is_companion_in_channel)
-    {
-        c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?");
     }
     else
     {
-        c.chat.postMessage(event->channel, "Waldorfbot! There you are, old chum.");
+        c.chat.postMessage(event->channel,
+                           "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?");
     }
 }
 
@@ -579,22 +576,23 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
         message.reply("Wait, don't leave me here all by myself!");
     });
 
-    //// Strangely, this is how we find out if we've been kicked. Fragile, I'm guessing. TOTAL HACK ALERT!
-    handler_.hears(std::regex{"^You have been removed from #"}, [](const auto &message)
-    {
-        if(message.from_user_id != "USLACKBOT") return;
-
-        //extract the channel name from the message
-        // "You have been removed from #donbot-testing2 by <@U0JFHT99N|don>"
-        std::smatch pieces_match;
-        std::regex message_regex{"(#[\\w\\d-]+)"};
-        if (std::regex_search(message.text, pieces_match, message_regex))
-        {
-            //post into that channel
-            slack::slack c{message.token.bot_token};
-            auto channel_name = pieces_match[1].str();
-            //TODO only say this if Waldorfbot is in the channel still
-            c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!");
-        }
-    });
+    // Doesn't work!
+//    //// Strangely, this is how we find out if we've been kicked. Fragile, I'm guessing. TOTAL HACK ALERT!
+//    handler_.hears(std::regex{"^You have been removed from #"}, [](const auto &message)
+//    {
+//        if(message.from_user_id != "USLACKBOT") return;
+//
+//        //extract the channel name from the message
+//        // "You have been removed from #donbot-testing2 by <@U0JFHT99N|don>"
+//        std::smatch pieces_match;
+//        std::regex message_regex{"(#[\\w\\d-]+)"};
+//        if (std::regex_search(message.text, pieces_match, message_regex))
+//        {
+//            //post into that channel
+//            slack::slack c{message.token.bot_token};
+//            auto channel_name = pieces_match[1].str();
+//            //TODO only say this if Waldorfbot is in the channel still
+//            c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!");
+//        }
+//    });
 }
