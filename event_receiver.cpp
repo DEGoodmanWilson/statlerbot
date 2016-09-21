@@ -34,48 +34,9 @@ uint8_t d100_()
     return i;
 }
 
-std::deque<std::pair<std::string, std::string>> bot_id_deque_;
-std::map<std::string, std::string> bot_id_map_;
-
 bool is_from_us_(slack::http_event_client::message message)
 {
-    slack::bot_id my_bot_id;
-    //first, attempt to retrieve our bot id from cache
-    if (bot_id_map_.count(message.token.team_id))
-    {
-        //cache hit
-        my_bot_id = bot_id_map_.at(message.token.team_id);
-        //bump this token to the end by first removing it then push it onto the tail.
-        for (auto i = bot_id_deque_.begin(); i != bot_id_deque_.end(); ++i)
-        {
-            if (i->first == message.token.team_id)
-            {
-                bot_id_deque_.erase(i);
-                break;
-            }
-        }
-    }
-    else
-    {
-        //cache miss
-        slack::slack c{message.token.bot_token};
-        auto user = c.users.info(message.token.bot_id).user;
-        my_bot_id = *user.profile.bot_id;
-        if (bot_id_deque_.size() > 100)
-        {
-            bot_id_deque_.pop_front(); //remove least-recently accessed element
-        }
-    }
-
-    //mark this element as most recently accessed
-    bot_id_deque_.push_back(std::make_pair(message.token.team_id, my_bot_id));
-
-    if (message.from_user_id == my_bot_id)
-    {
-        return true;
-    }
-
-    return false;
+    return ((message.from_user_id == message.token.bot_id) || (message.from_user_id == message.token.bot_user_id) );
 }
 
 
@@ -128,7 +89,7 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
 void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event, const slack::http_event_envelope &envelope)
 {
     //someone just joined a channel, is it us?
-    if(event->user != envelope.token.bot_id) return; //it wasn't us
+    if(event->user != envelope.token.bot_user_id) return; //it wasn't us
     //TODO was it Waldorf?
 
     //see if waldorf is in this channel
@@ -136,14 +97,14 @@ void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_c
     slack::slack c{envelope.token.bot_token};
 
     bool is_companion_installed = false;
-    slack::user_id companion_bot_id;
+    slack::user_id companion_bot_user_id;
     auto user_list = c.users.list().members;
     for (const auto &user : user_list)
     {
         if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
         {
             is_companion_installed = true;
-            companion_bot_id = user.id;
+            companion_bot_user_id = user.id;
             break;
         }
     }
@@ -154,7 +115,7 @@ void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_c
         auto channel_members = c.channels.info(event->channel).channel.members;
         for (const auto &user : channel_members)
         {
-            if (user == companion_bot_id)
+            if (user == companion_bot_user_id)
             {
                 is_companion_in_channel = true;
                 break;
@@ -227,6 +188,7 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
                 req.headers["Bb-Slackuserid"],
                 req.headers["Bb-Slackbotaccesstoken"],
                 req.headers["Bb-Slackbotuserid"],
+                req.headers["Bb-Slackbotid"],
         };
 
         if (!req.body.empty())
@@ -631,6 +593,7 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
             //post into that channel
             slack::slack c{message.token.bot_token};
             auto channel_name = pieces_match[1].str();
+            //TODO only say this if Waldorfbot is in the channel still
             c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!");
         }
     });
