@@ -63,6 +63,16 @@ bool is_user_in_channel_(const slack::slack &client, const slack::user_id &user_
     return false;
 }
 
+bool is_companion_in_channel_(const slack::slack &client, const slack::channel_id &channel_id)
+{
+    slack::user_id companion_user_id;
+    if(is_companion_installed_(client, companion_user_id))
+    {
+        return is_user_in_channel_(client, companion_user_id, channel_id);
+    }
+    return false;
+}
+
 
 bool is_from_us_(slack::http_event_client::message message)
 {
@@ -92,7 +102,7 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
         if (is_companion_installed_(c, companion_user_id))
         {
             c.chat.postMessage(envelope.token.user_id,
-                               "Just invite Waldorfbot and me into any channel, and we'll get to heckling.");
+                               "Just invite Waldorfbot and me into any channel, and we'll get to heckling. (We only heckle a small fraction of messages in a channel.)");
         }
         else
         {
@@ -571,10 +581,10 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
     });
 
 
-    handler_.hears(std::regex{"^Well, Statlerbot, it's time to go. Thank goodness!$"}, [](const auto &message)
-    {
-        message.reply("Wait, don't leave me here all by myself!");
-    });
+//    handler_.hears(std::regex{"^Well, Statlerbot, it's time to go. Thank goodness!$"}, [](const auto &message)
+//    {
+//        message.reply("Wait, don't leave me here all by myself!");
+//    });
 
     // Doesn't work!
 //    //// Strangely, this is how we find out if we've been kicked. Fragile, I'm guessing. TOTAL HACK ALERT!
