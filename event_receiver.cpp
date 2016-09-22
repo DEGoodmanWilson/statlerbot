@@ -98,16 +98,14 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
         slack::slack c{envelope.token.bot_token};
         slack::user_id companion_user_id;
 
-        c.chat.postMessage(envelope.token.user_id, "Thanks for installing me!");
+        c.chat.postMessage(envelope.token.user_id, "Thanks for installing me!", slack::chat::postMessage::parameter::as_user{true});
         if (is_companion_installed_(c, companion_user_id))
         {
-            c.chat.postMessage(envelope.token.user_id,
-                               "Just invite Waldorfbot and me into any channel, and we'll get to heckling. (We only heckle a small fraction of messages in a channel.)");
+            c.chat.postMessage(envelope.token.user_id, "Just invite Waldorfbot and me into any channel, and we'll get to heckling. (We only heckle a small fraction of messages in a channel.)", slack::chat::postMessage::parameter::as_user{true});
         }
         else
         {
-            c.chat.postMessage(envelope.token.user_id,
-                               "Please also install <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|my friend Waldorfbot!>, then invite us into any channel to start heckling!");
+            c.chat.postMessage(envelope.token.user_id, "Please also install <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|my friend Waldorfbot!>, then invite us into any channel to start heckling!", slack::chat::postMessage::parameter::as_user{true});
         }
     }
 }
@@ -129,18 +127,16 @@ void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_c
     {
         if(is_user_in_channel_(c, companion_bot_user_id, event->channel))
         {
-            c.chat.postMessage(event->channel, "Waldorfbot! There you are, old chum.");
+            c.chat.postMessage(event->channel, "Waldorfbot! There you are, old chum.", slack::chat::postMessage::parameter::as_user{true});
         }
         else
         {
-            c.chat.postMessage(event->channel,
-                               "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?");
+            c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?", slack::chat::postMessage::parameter::as_user{true});
         }
     }
     else
     {
-        c.chat.postMessage(event->channel,
-                           "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?");
+        c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?", slack::chat::postMessage::parameter::as_user{true});
     }
 }
 
@@ -173,7 +169,7 @@ event_receiver::handle_message(std::shared_ptr<slack::event::message> event, con
     {
         auto phrase = *select_randomly(phrases.begin(), phrases.end());
         slack::slack c{envelope.token.bot_token};
-        c.chat.postMessage(event->channel, phrase);
+        c.chat.postMessage(event->channel, phrase, slack::chat::postMessage::parameter::as_user{true});
     }
 }
 
@@ -602,7 +598,7 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
 //            slack::slack c{message.token.bot_token};
 //            auto channel_name = pieces_match[1].str();
 //            //TODO only say this if Waldorfbot is in the channel still
-//            c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!");
+//            c.chat.postMessage(channel_name, "Well, Waldorfbot, it's time to go. Thank goodness!", slack::chat::postMessage::parameter::as_user{true});
 //        }
 //    });
 }

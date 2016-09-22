@@ -1,6 +1,6 @@
 [requires]
 luna/2.2.1@DEGoodmanWilson/stable
-engine/1.0-beta23@DEGoodmanWilson/testing
+engine/1.0-beta24@DEGoodmanWilson/testing
 jsoncpp/1.7.3@theirix/stable
 easyloggingpp/9.80@memsharded/testing
 [generators]
