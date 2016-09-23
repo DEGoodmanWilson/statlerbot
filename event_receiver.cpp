@@ -144,8 +144,6 @@ void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_c
 void
 event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
 {
-    LOG(DEBUG) << "Handling message: " << event->text;
-
     static std::vector<std::string> phrases = {
             "I wonder if there really is life on another planet.",
             "Boo!",
