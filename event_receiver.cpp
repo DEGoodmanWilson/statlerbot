@@ -90,7 +90,7 @@ void event_receiver::handle_error(std::string message, std::string received)
 void
 event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, const slack::http_event_envelope &envelope)
 {
-    LOG(WARNING) << "Unknown event: " << event->type << ": " << event->raw_event;
+    LOG(WARNING) << "Unknown event: " << event->type;
 
     if (event->type == "bb.team_added")
     {
