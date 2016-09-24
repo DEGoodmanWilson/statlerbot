@@ -2,6 +2,6 @@ name: Statlerbot
 description: >
   A lovable heckler and Waldorfbot's best friend. Install them both in \#random, and watch hilarity ensue.
 
-  Statlerbot and Waldorfbot will hang out in a channel, and will randomly respond (with about a 1% probability)
+  Statlerbot and Waldorfbot will hang out in a channel, and will randomly respond (with about a 5% probability)
   to any given message left by a human in that channel.
 avatar: statler.png

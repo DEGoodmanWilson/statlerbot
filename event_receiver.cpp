@@ -163,7 +163,7 @@ event_receiver::handle_message(std::shared_ptr<slack::event::message> event, con
     };
 
 
-    if (d100_() <= 1) //only respond 1% of the time TODO make this configurable
+    if (d100_() <= 5) //only respond 5% of the time TODO make this configurable
     {
         auto phrase = *select_randomly(phrases.begin(), phrases.end());
         slack::slack c{envelope.token.bot_token};
