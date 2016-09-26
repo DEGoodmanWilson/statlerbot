@@ -6,6 +6,7 @@
 #include <slack/slack.h>
 #include <random>
 #include "logging.h"
+#include "team_info.h"
 
 #define WALDORF_APP_ID "A2CLSFX98"
 
@@ -34,14 +35,28 @@ uint8_t d100_()
     return i;
 }
 
-bool is_companion_installed_(const slack::slack &client, slack::user_id &user_id)
+bool event_receiver::get_companion_info_(const slack::token &token, team_info &info)
 {
+    std::string info_str;
+    if (store_.get(token.team_id, info_str))
+    {
+        info = from_json(info_str);
+        return true;
+    }
+
+    // couldn't find it.
+    slack::slack client{token.bot_token};
     auto user_list = client.users.list().members;
     for (const auto &user : user_list)
     {
         if (user.is_bot && user.profile.api_app_id && (*(user.profile.api_app_id) == WALDORF_APP_ID))
         {
-            user_id = user.id;
+            info.companion_user_id = user.id;
+            if (user.profile.bot_id)
+            {
+                info.companion_bot_id = *user.profile.bot_id;
+            }
+            store_.set(token.team_id, info.to_json());
             return true;
         }
     }
@@ -49,34 +64,31 @@ bool is_companion_installed_(const slack::slack &client, slack::user_id &user_id
     return false;
 }
 
-bool is_user_in_channel_(const slack::slack &client, const slack::user_id &user_id, const slack::channel_id &channel_id)
+bool is_companion_in_channel_(const slack::token &token, const team_info& info, const slack::channel_id &channel_id)
 {
+    slack::slack client{token.bot_token};
+
     auto channel_members = client.channels.info(channel_id).channel.members;
     for (const auto &user : channel_members)
     {
-        if (user == user_id)
+        if (user == info.companion_user_id)
         {
             return true;
         }
     }
 
-    return false;
-}
-
-bool is_companion_in_channel_(const slack::slack &client, const slack::channel_id &channel_id)
-{
-    slack::user_id companion_user_id;
-    if(is_companion_installed_(client, companion_user_id))
-    {
-        return is_user_in_channel_(client, companion_user_id, channel_id);
-    }
     return false;
 }
 
 
 bool is_from_us_(slack::http_event_client::message message)
 {
-    return ((message.from_user_id == message.token.bot_id) || (message.from_user_id == message.token.bot_user_id) );
+    return ((message.from_user_id == message.token.bot_id) || (message.from_user_id == message.token.bot_user_id));
+}
+
+bool is_from_companion_(const team_info &info, slack::bot_id from)
+{
+    return (from == info.companion_bot_id);
 }
 
 
@@ -98,14 +110,21 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
         slack::slack c{envelope.token.bot_token};
         slack::user_id companion_user_id;
 
-        c.chat.postMessage(envelope.token.user_id, "Thanks for installing me!", slack::chat::postMessage::parameter::as_user{true});
-        if (is_companion_installed_(c, companion_user_id))
+        c.chat.postMessage(envelope.token.user_id,
+                           "Thanks for installing me!",
+                           slack::chat::postMessage::parameter::as_user{true});
+        team_info info;
+        if (get_companion_info_(envelope.token, info))
         {
-            c.chat.postMessage(envelope.token.user_id, "Just invite Waldorfbot and me into any channel, and we'll get to heckling. (We only heckle a small fraction of messages in a channel.)", slack::chat::postMessage::parameter::as_user{true});
+            c.chat.postMessage(envelope.token.user_id,
+                               "Just invite Waldorfbot and me into any channel, and we'll get to heckling. (We only heckle a small fraction of messages in a channel.)",
+                               slack::chat::postMessage::parameter::as_user{true});
         }
         else
         {
-            c.chat.postMessage(envelope.token.user_id, "Please also install <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|my friend Waldorfbot!>, then invite us into any channel to start heckling!", slack::chat::postMessage::parameter::as_user{true});
+            c.chat.postMessage(envelope.token.user_id,
+                               "Please also install <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|my friend Waldorfbot!>, then invite us into any channel to start heckling!",
+                               slack::chat::postMessage::parameter::as_user{true});
         }
     }
 }
@@ -113,36 +132,7 @@ event_receiver::handle_unknown(std::shared_ptr<slack::event::unknown> event, con
 //TODO
 // void event_receiver::handle_leave_channel()
 
-void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event, const slack::http_event_envelope &envelope)
-{
-    //someone just joined a channel, is it us?
-    if (event->user != envelope.token.bot_user_id) return; //it wasn't us
-
-    //see if waldorf is in this channel
-    //TODO do this in the background
-    slack::slack c{envelope.token.bot_token};
-
-    slack::user_id companion_bot_user_id;
-    if(is_companion_installed_(c, companion_bot_user_id))
-    {
-        if(is_user_in_channel_(c, companion_bot_user_id, event->channel))
-        {
-            c.chat.postMessage(event->channel, "Waldorfbot! There you are, old chum.", slack::chat::postMessage::parameter::as_user{true});
-        }
-        else
-        {
-            c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?", slack::chat::postMessage::parameter::as_user{true});
-        }
-    }
-    else
-    {
-        c.chat.postMessage(event->channel, "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?", slack::chat::postMessage::parameter::as_user{true});
-    }
-}
-
-
-void
-event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
+void event_receiver::handle_message_internal_(const slack::token &token, const slack::channel_id &channel_id)
 {
     static std::vector<std::string> phrases = {
             "I wonder if there really is life on another planet.",
@@ -163,20 +153,77 @@ event_receiver::handle_message(std::shared_ptr<slack::event::message> event, con
     };
 
 
-    if (d100_() <= 5) //only respond 5% of the time TODO make this configurable
+
+    auto phrase = *select_randomly(phrases.begin(), phrases.end());
+    slack::slack c{token.bot_token};
+    c.chat.postMessage(channel_id, phrase, slack::chat::postMessage::parameter::as_user{true});
+}
+
+void event_receiver::handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event,
+                                         const slack::http_event_envelope &envelope)
+{
+    //someone just joined a channel, is it us?
+    if (event->user != envelope.token.bot_user_id) return; //it wasn't us
+
+    //see if waldorf is in this channel
+    //TODO do this in the background
+    slack::slack c{envelope.token.bot_token};
+
+    slack::user_id companion_bot_user_id;
+    team_info info;
+    if (get_companion_info_(envelope.token, info))
     {
-        auto phrase = *select_randomly(phrases.begin(), phrases.end());
-        slack::slack c{envelope.token.bot_token};
-        c.chat.postMessage(event->channel, phrase, slack::chat::postMessage::parameter::as_user{true});
+        if (is_companion_in_channel_(envelope.token, info, event->channel))
+        {
+            c.chat.postMessage(event->channel,
+                               "Waldorfbot! There you are, old chum.",
+                               slack::chat::postMessage::parameter::as_user{true});
+        }
+        else
+        {
+            c.chat.postMessage(event->channel,
+                               "Waldorfbot, where are you? Can someone invite Waldorfbot into the channel?",
+                               slack::chat::postMessage::parameter::as_user{true});
+        }
+    }
+    else
+    {
+        c.chat.postMessage(event->channel,
+                           "Waldorfbot, where are you? Can someone <https://beepboophq.com/bots/469ae2c9f27a48829bcd28f0f276b00c|install Waldorfbot> into this team?",
+                           slack::chat::postMessage::parameter::as_user{true});
     }
 }
 
-event_receiver::event_receiver(server *server, const std::string &verification_token) :
-        route_set{server},
-        handler_{verification_token}
+void
+event_receiver::handle_bot_message(std::shared_ptr<slack::event::message_bot_message> event, const slack::http_event_envelope &envelope)
+{
+    team_info info;
+    bool maybe_ignore = get_companion_info_(envelope.token, info);
+
+    if(maybe_ignore)
+    if ( (!is_from_companion_(info, event->bot_id)) && (d100_() <= 5) ) //only respond 5% of the time TODO make this configurable
+    {
+        handle_message_internal_(envelope.token, event->channel);
+    }
+}
+
+
+void
+event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
+{
+    if (d100_() <= 5) //only respond 5% of the time TODO make this configurable
+    {
+        handle_message_internal_(envelope.token, event->channel);
+    }
+}
+
+event_receiver::event_receiver(server &server, beep_boop_persist &store, const std::string &verification_token) :
+        server_{server},
+        handler_{verification_token},
+        store_{store}
 {
 
-    server->handle_request(request_method::POST, "/slack/event", [&](auto req) -> response
+    server.handle_request(request_method::POST, "/slack/event", [&](auto req) -> response
     {
         if (!req.headers.count("Bb-Slackteamid")) //TOOD make this more robust
         {
@@ -218,9 +265,9 @@ event_receiver::event_receiver(server *server, const std::string &verification_t
                                                  std::placeholders::_1,
                                                  std::placeholders::_2));
     handler_.on<slack::event::message_channel_join>(std::bind(&event_receiver::handle_join_channel,
-                                                 this,
-                                                 std::placeholders::_1,
-                                                 std::placeholders::_2));
+                                                              this,
+                                                              std::placeholders::_1,
+                                                              std::placeholders::_2));
 
     //dialog responses
 
