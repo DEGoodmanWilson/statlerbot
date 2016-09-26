@@ -22,6 +22,6 @@ WORKDIR /home/conan
 WORKDIR /home/conan/app
 RUN conan install -s compiler=gcc -s compiler.version=5.4 -s compiler.libcxx=libstdc++11 --build=missing
 WORKDIR /home/conan/app/build
-RUN cmake ..
+RUN cmake .. --config Release
 RUN cmake --build .
 CMD ["/home/conan/app/build/bin/statlerbot", "-v"]
