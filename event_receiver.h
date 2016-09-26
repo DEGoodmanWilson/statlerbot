@@ -6,7 +6,6 @@
 
 #include <luna/luna.h>
 #include <slack/slack.h>
-#include <deque>
 #include "team_info.h"
 #include "beep_boop_persist.h"
 
@@ -21,7 +20,6 @@ public:
     void handle_join_channel(std::shared_ptr<slack::event::message_channel_join> event, const slack::http_event_envelope &envelope);
 
     void handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope);
-    void handle_bot_message(std::shared_ptr<slack::event::message_bot_message> event, const slack::http_event_envelope &envelope);
 
 private:
     luna::server &server_;
