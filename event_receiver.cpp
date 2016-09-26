@@ -213,7 +213,6 @@ event_receiver::event_receiver(server &server, beep_boop_persist &store,
         handler_{verification_token},
         store_{store}
 {
-
     server.handle_request(request_method::POST, "/slack/event", [&](auto req) -> response
     {
         if (!req.headers.count("Bb-Slackteamid")) //TOOD make this more robust

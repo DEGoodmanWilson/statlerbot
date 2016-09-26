@@ -74,7 +74,6 @@ int main(int argc, char* argv[])
         port = atoi(port_str);
     }
 
-
     // Create a memory store
     auto beepboop_token_raw = std::getenv("BEEPBOOP_TOKEN");
     auto beepboop_persist_url_raw = std::getenv("BEEPBOOP_PERSIST_URL");
