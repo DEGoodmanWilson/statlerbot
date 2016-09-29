@@ -86,6 +86,11 @@ bool is_from_us_(const slack::http_event_client::message &message)
     return ((message.from_user_id == message.token.bot_id) || (message.from_user_id == message.token.bot_user_id));
 }
 
+bool is_from_us_(const slack::token &token, const std::string &from)
+{
+    return ((from == token.bot_user_id) || (from == token.bot_id));
+}
+
 bool is_from_companion_(const team_info &info, const std::string &from)
 {
     return (from == info.companion_bot_id) || (from == info.companion_user_id);
@@ -195,15 +200,19 @@ void
 event_receiver::handle_message(std::shared_ptr<slack::event::message> event, const slack::http_event_envelope &envelope)
 {
     team_info info;
-    bool maybe_ignore = get_companion_info_(envelope.token, info);
-
-    if (maybe_ignore)
+    if (get_companion_info_(envelope.token, info) && is_from_companion_(info, event->user))
     {
-        if ((!is_from_companion_(info, event->user)) &&
-            (d100_() <= 5)) //only respond 5% of the time TODO make this configurable
-        {
-            handle_message_internal_(envelope.token, event->channel);
-        }
+        return; //it's from our companion, just ignore it.
+    }
+
+    if (is_from_us_(envelope.token, event->user))
+    {
+        return; //it's from us, ignore that too.
+    }
+
+    if (d100_() <= 5) //only respond 5% of the time TODO make this configurable
+    {
+        handle_message_internal_(envelope.token, event->channel);
     }
 }
 
