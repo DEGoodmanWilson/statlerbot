@@ -9,9 +9,9 @@
 
 INITIALIZE_EASYLOGGINGPP
 
-void luna_logger(luna::log_level level, const std::string &message)
+void error_logger(luna::log_level level, const std::string &message)
 {
-    switch(level)
+    switch (level)
     {
         case luna::log_level::DEBUG:
             LOG(DEBUG) << message;
@@ -29,6 +29,12 @@ void luna_logger(luna::log_level level, const std::string &message)
             LOG(FATAL) << message;
             break;
     }
+}
+
+void access_logger(const luna::request &request)
+{
+    LOG(INFO) << request.ip_address << ": " << luna::to_string(request.method) << " " << request.path << " "
+              << request.http_version << " " << request.headers.at("user-agent");
 }
 
 void slack_logger(slack::log_level level, const std::string &message)
@@ -67,6 +73,11 @@ int main(int argc, char* argv[])
 
     //http://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm
 
+    luna::set_access_logger(access_logger);
+    luna::set_error_logger(error_logger);
+
+    slack::set_logger(slack_logger);
+
     // First, let's check those env variables
     uint16_t port = 8080;
     if (auto port_str = std::getenv("PORT"))
@@ -96,21 +107,13 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    luna::set_logger(luna_logger);
-
-    slack::set_logger(slack_logger);
-
     LOG(INFO) << "Server started on port " << std::to_string(server.get_port());
 
     event_receiver receiver{server, store, ""}; //use empty string because beep boop is doing the checking for us.
 
     //IDLE UNTIL DEAD basically just stop this thread in its tracks
-    std::mutex m;
-    std::condition_variable cv;
-    {
-        std::unique_lock<std::mutex> lk(m);
-        cv.wait(lk, []{return false;});
-    }
+    server.await();
 
     return 0;
 }
+

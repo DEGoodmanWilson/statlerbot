@@ -1,8 +1,10 @@
 [requires]
-luna/2.2.1@DEGoodmanWilson/stable
+luna/3.0.0@DEGoodmanWilson/stable
 engine/1.0-beta25@DEGoodmanWilson/testing
 jsoncpp/1.7.3@theirix/stable
 easyloggingpp/9.80@memsharded/testing
 cpr/1.2.0@DEGoodmanWilson/testing
+# cpp_redis/master@qmenoret/stable
+cpp_redis/master@ikeshita_katsuhiko/stable
 [generators]
 cmake
